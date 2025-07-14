@@ -1,3 +1,8 @@
+include:
+  - apps.yml
+  - monitoring.yml
+  - proxy.yml
+
 services:
   postgres:
     image: postgres:17
