@@ -1,0 +1,84 @@
+services:
+  npm:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: npm
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - DB_TYPE=${NPM_DB_TYPE}
+      - DB_HOST=${NPM_DB_HOST}
+      - DB_PORT=${NPM_DB_PORT}
+      - DB_USER=${NPM_DB_USER}
+      - DB_PASS=${NPM_DB_PASSWORD}
+      - DB_NAME=${NPM_DB_NAME}
+      - DISABLE_IPV6=${NPM_DISABLE_IPV6}
+      # - LETSENCRYPT_EMAIL=${NPM_LETSENCRYPT_EMAIL}
+      - LETSENCRYPT_AGREE_TOS=true
+    volumes:
+      - ./data/npm/data:/data
+      - ./data/npm/letsencrypt:/etc/letsencrypt
+    networks:
+      - selfnet
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    networks:
+      - selfnet
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 128M
+
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguard
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "853:853/tcp"
+    volumes:
+      - ./data/adguard/work:/opt/adguardhome/work
+      - ./data/adguard/conf:/opt/adguardhome/conf
+    restart: unless-stopped
+    networks:
+      - selfnet
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    volumes:
+      - ./data/homepage:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ=${TZ}
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
+      - PUID=${PUID}
+      - PGID=988
+    restart: unless-stopped
+    networks:
+      - selfnet
+    deploy:
+      resources:
+        limits:
+          cpus: '0.10'
+          memory: 128M
