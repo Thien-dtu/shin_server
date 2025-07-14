@@ -110,7 +110,7 @@ Sau khi các dịch vụ đã chạy, bạn có thể truy cập chúng qua trì
     ./compose.sh up -d
     ```
 
-*   **Kh��c phục sự cố:**
+*   **Khắc phục sự cố:**
     *   Kiểm tra nhật ký của các container bị lỗi (`docker logs <container_name>`).
     *   Đảm bảo các cổng không bị xung đột.
     *   Kiểm tra cấu hình trong các tệp `.yml` của bạn.
