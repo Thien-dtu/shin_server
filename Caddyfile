@@ -1,0 +1,35 @@
+{
+    # Tắt hoàn toàn HTTPS tự động của Caddy
+    auto_https off
+}
+
+# Homepage
+http://homepage.buiducthien.store {
+    reverse_proxy http://homepage:3000
+}
+
+# Filebrowser
+http://filebrowser.buiducthien.store {
+    reverse_proxy http://filebrowser:80
+}
+
+# Immich
+http://immich.buiducthien.store {
+    reverse_proxy http://immich-server:2283
+}
+
+# Nextcloud
+http://nextcloud.buiducthien.store {
+    reverse_proxy http://nextcloud:80
+}
+
+# Paperless
+http://paperless.buiducthien.store {
+    reverse_proxy http://paperless:8000
+}
+
+# Vaultwarden
+http://vaultwarden.buiducthien.store {
+    reverse_proxy http://vaultwarden:80
+}
+
