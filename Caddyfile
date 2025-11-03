@@ -33,3 +33,8 @@ http://vaultwarden.buiducthien.store {
     reverse_proxy http://vaultwarden:80
 }
 
+# Wallabag
+http://wallabag.buiducthien.store {
+    reverse_proxy http://wallabag:80
+}
+
