@@ -7,8 +7,9 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE DATABASE paperless_db;
     CREATE DATABASE nextcloud_db;
     CREATE DATABASE wallabag_db;
+    CREATE DATABASE gitea_db;
     -- Xóa các dòng CREATE DATABASE cho gitea, freshrss, wallabag, joplin... nếu có
 EOSQL
 
-echo "Databases paperless_db, nextcloud_db, and wallabag_db created successfully."
+echo "Databases paperless_db, nextcloud_db, wallabag_db and gitea_db created successfully."
 

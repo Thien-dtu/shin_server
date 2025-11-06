@@ -38,3 +38,17 @@ http://wallabag.buiducthien.store {
     reverse_proxy http://wallabag:80
 }
 
+# Gitea UI
+http://gitea.buiducthien.store {
+    reverse_proxy http://gitea:3000
+}
+
+# 3. Khối "PHÉP THUẬT" MỚI (Wildcard Cấp 1)
+*.buiducthien.store {
+    # {http.host.labels.0} vẫn sẽ là phần đầu tiên (ví dụ: "my-first-site")
+    # Caddy đủ thông minh để không áp dụng khối này cho "gitea" hay "paperless"
+    # vì chúng đã được định nghĩa ở trên.
+    root * /var/www/public_html/{http.host.labels.0}
+    
+    file_server
+}

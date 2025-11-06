@@ -255,6 +255,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./data/caddy/data:/data
       - ./data/caddy/config:/config
+      - ./data/gitea-deployments:/var/www/public_html:ro # :ro = read-only
     deploy:
       resources:
         limits:
@@ -349,7 +350,7 @@ services:
         limits:
           cpus: '0.25'
           memory: 256M
-
+  
   wallabag:
     image: wallabag/wallabag:latest
     container_name: wallabag
@@ -386,6 +387,69 @@ services:
         limits:
           cpus: '0.50'
           memory: 256M
+  
+    # 2. THÊM GITEA SERVER:
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    networks:
+      - selfnet
+    volumes:
+      - ./data/gitea:/data
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - USER_UID=${PUID}
+      - USER_GID=${PGID}
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_NAME=gitea_db # ⚠️ Database mới
+      - DB_USER=admin
+      - DB_PASS=${POSTGRES_PASSWORD}
+      - DOMAIN=gitea.buiducthien.store
+      - ROOT_URL=http://gitea.buiducthien.store
+      - SSH_DOMAIN=gitea.buiducthien.store
+      # Bật tính năng Actions
+      - GITEA__service__ENABLE_GIT_ACTIONS=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # 3. THÊM GITEA ACTIONS RUNNER:
+  gitea-runner:
+    image: gitea/act_runner:latest
+    container_name: gitea_runner
+    networks:
+      - selfnet
+    volumes:
+      - ./data/gitea_runner:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data/gitea-deployments:/deployments
+      - ./data/gitea_runner/config.yaml:/data/config.yaml
+    environment:
+      - GITEA_INSTANCE_URL=http://gitea:3000
+      - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_TOKEN}
+      - GITEA_RUNNER_NAME=runner
+    depends_on:
+      gitea:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
 
 networks:
   selfnet:
