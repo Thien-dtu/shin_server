@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17
-    user: "1000:1000"
+    user: 1000:1000
     container_name: postgres
     environment:
       - POSTGRES_USER=admin
@@ -16,43 +16,17 @@ services:
     networks:
       - selfnet
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d shared_db"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U admin -d shared_db
       interval: 10s
       timeout: 5s
       retries: 5
     deploy:
       resources:
         limits:
-          cpus: '0.50'
+          cpus: "0.50"
           memory: 512M
-  immich_postgres:
-    container_name: immich_postgres
-    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
-    user: "1000:1000"
-    environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=immich
-      - POSTGRES_INITDB_ARGS=--data-checksums
-      - PUID=${PUID}
-      - PGID=${PGID}
-    volumes:
-      - ./data/immich_postgres:/var/lib/postgresql/data
-    command: postgres -c shared_preload_libraries='vectors.so,vchord' -c 'search_path="$user", public, vectors.so' -c logging_collector=on -c max_wal_size=1GB -c shared_buffers=128MB -c wal_compression=on
-    restart: unless-stopped
-    networks:
-      - selfnet
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d immich"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-
   redis:
     container_name: redis
     image: docker.io/valkey/valkey:8-bookworm@sha256:fea8b3e67b15729d4bb70589eb03367bab9ad1ee89c876f54327fc7c6e618571
@@ -61,18 +35,20 @@ services:
     networks:
       - selfnet
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        - CMD
+        - redis-cli
+        - ping
       interval: 10s
       timeout: 5s
       retries: 5
     deploy:
       resources:
         limits:
-          cpus: '0.10'
+          cpus: "0.10"
           memory: 128M
-
   paperless:
-    user: "${PUID}:${PGID}"
+    user: ${PUID}:${PGID}
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     container_name: paperless
     environment:
@@ -104,122 +80,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 768M
-
-  nextcloud:
-    image: nextcloud:latest
-    container_name: nextcloud
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - NEXTCLOUD_ADMIN_USER=admin
-      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_DB=nextcloud_db
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    volumes:
-      - ./data/nextcloud/html:/var/www/html:rw
-      - ./data/nextcloud/custom_apps:/var/w...
-      - ./data/nextcloud/custom_apps:/var/www/html/custom_apps:rw
-      - ./data/nextcloud/config:/var/www/html/config:rw
-      - ./data/nextcloud/data:/var/www/html/data:rw
-    depends_on:
-      postgres:
-        condition: service_healthy
-        restart: true
-      redis:
-        condition: service_healthy
-        restart: true
-    restart: unless-stopped
-    networks:
-      - selfnet
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/status.php"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-
-  immich-server:
-    container_name: immich_server
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
-    volumes:
-      - ${UPLOAD_LOCATION}:/usr/src/app/upload
-      - /etc/localtime:/etc/localtime:ro
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2283/health"]
-      interval: 30s
-      timeout: 15s
-      retries: 10
-    environment:
-      - DB_HOST=immich_postgres
-      - DB_HOSTNAME=immich_postgres
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_DATABASE_NAME=immich
-      - REDIS_HOST=redis
-      - REDIS_HOSTNAME=redis
-      - UPLOAD_MAX_TIMEOUT=600000
-      - REDIS_PORT=6379
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=Asia/Ho_Chi_Minh
-      - NODE_ENV=production
-      - SERVER_PORT=2283
-      - SERVER_HOST=0.0.0.0
-      - MAX_FILE_SIZE=10000000000
-      - MAX_UPLOAD_SIZE=10000000000
-      - MAX_UPLOAD_FILES=100000000
-      - UPLOAD_CHUNK_SIZE=100000000
-    depends_on:
-      immich_postgres:
-        condition: service_healthy
-        restart: true
-      redis:
-        condition: service_healthy
-        restart: true
-    restart: unless-stopped
-    networks:
-      - selfnet
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 768M
-
-  immich-machine-learning:
-    container_name: immich_machine_learning
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
-    volumes:
-      - ./data/immich-model-cache:/cache
-    environment:
-      - DB_HOST=immich_postgres
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_DATABASE_NAME=immich
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - PUID=${PUID}
-      - PGID=${PGID}
-    restart: unless-stopped
-    networks:
-      - selfnet
-    deploy:
-      resources:
-        limits:
-          cpus: '1.5'
-          memory: 1G
-
   vaultwarden:
     image: vaultwarden/server:latest
     container_name: vaultwarden
@@ -240,15 +102,14 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.20'
+          cpus: "0.20"
           memory: 256M
-
   caddy:
     image: caddy:latest
     container_name: caddy
     restart: unless-stopped
     ports:
-      - "80:80"
+      - 80:80
     networks:
       - selfnet
     volumes:
@@ -259,9 +120,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 128M
-
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared
@@ -274,33 +134,12 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.10'
+          cpus: "0.10"
           memory: 128M
-
-  homepage:
-    image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
-    volumes:
-      - ./data/homepage:/app/config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    environment:
-      - TZ=${TZ}
-      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
-      - PUID=${PUID}
-      - PGID=988
-    restart: unless-stopped
-    networks:
-      - selfnet
-    deploy:
-      resources:
-        limits:
-          cpus: '0.10'
-          memory: 128M
-
   filebrowser:
     image: filebrowser/filebrowser:latest
     container_name: filebrowser
-    user: "${PUID}:${PGID}"
+    user: ${PUID}:${PGID}
     volumes:
       - /:/srv
       - ./data/filebrowser/database:/database
@@ -311,9 +150,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.10'
+          cpus: "0.10"
           memory: 128M
-
   watchtower:
     image: containrrr/watchtower:latest
     container_name: watchtower
@@ -329,9 +167,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.10'
+          cpus: "0.10"
           memory: 128M
-
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
@@ -343,114 +180,16 @@ services:
       - PGID=${PGID}
       - PORTAINER_CSRF_PROTECTION_DISABLED=1
     restart: unless-stopped
+    ports:
+      - 9000:9000
     networks:
       - selfnet
     deploy:
       resources:
         limits:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 256M
-  
-  wallabag:
-    image: wallabag/wallabag:latest
-    container_name: wallabag
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - SYMFONY__ENV__DATABASE_DRIVER=pdo_pgsql
-      - SYMFONY__ENV__DATABASE_HOST=postgres
-      - SYMFONY__ENV__DATABASE_PORT=5432
-      - SYMFONY__ENV__DATABASE_NAME=wallabag_db
-      - SYMFONY__ENV__DATABASE_USER=admin
-      - SYMFONY__ENV__DATABASE_PASSWORD=${POSTGRES_PASSWORD}
-      - SYMFONY__ENV__DATABASE_CHARSET=UTF8
-      - SYMFONY__ENV__DOMAIN_NAME=http://wallabag.buiducthien.store
-      - SYMFONY__ENV__SERVER_NAME="Wallabag at buiducthien.store"
-      - SYMFONY__ENV__FOSUSER_CONFIRMATION=false
-      - SYMFONY__ENV__FOSUSER_REGISTRATION=true
-      - SYMFONY__ENV__TWOFACTOR_AUTH=false
-    volumes:
-      - ./data/wallabag/data:/var/www/wallabag/data
-      - ./data/wallabag/images:/var/www/wallabag/web/assets/images
-    depends_on:
-      - postgres
-    restart: unless-stopped
-    networks:
-      - selfnet
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
-      interval: 1m
-      timeout: 3s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 256M
-  
-    # 2. THÊM GITEA SERVER:
-  gitea:
-    image: gitea/gitea:latest
-    container_name: gitea
-    networks:
-      - selfnet
-    volumes:
-      - ./data/gitea:/data
-      - /etc/localtime:/etc/localtime:ro
-    environment:
-      - USER_UID=${PUID}
-      - USER_GID=${PGID}
-      - DB_TYPE=postgres
-      - DB_HOST=postgres
-      - DB_NAME=gitea_db # ⚠️ Database mới
-      - DB_USER=admin
-      - DB_PASS=${POSTGRES_PASSWORD}
-      - DOMAIN=gitea.buiducthien.store
-      - ROOT_URL=http://gitea.buiducthien.store
-      - SSH_DOMAIN=gitea.buiducthien.store
-      # Bật tính năng Actions
-      - GITEA__service__ENABLE_GIT_ACTIONS=true
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  # 3. THÊM GITEA ACTIONS RUNNER:
-  gitea-runner:
-    image: gitea/act_runner:latest
-    container_name: gitea_runner
-    networks:
-      - selfnet
-    volumes:
-      - ./data/gitea_runner:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./data/gitea-deployments:/deployments
-      - ./data/gitea_runner/config.yaml:/data/config.yaml
-    environment:
-      - GITEA_INSTANCE_URL=http://gitea:3000
-      - GITEA_RUNNER_REGISTRATION_TOKEN=${GITEA_RUNNER_TOKEN}
-      - GITEA_RUNNER_NAME=runner
-    depends_on:
-      gitea:
-        condition: service_healthy
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-
+          
 networks:
   selfnet:
     driver: bridge

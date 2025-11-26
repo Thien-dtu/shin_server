@@ -43,6 +43,11 @@ http://gitea.buiducthien.store {
     reverse_proxy http://gitea:3000
 }
 
+#Dockeg
+http://dockge.buiducthien.store {
+    reverse_proxy http://dockge:5001
+}
+
 # 3. Khối "PHÉP THUẬT" MỚI (Wildcard Cấp 1)
 *.buiducthien.store {
     # {http.host.labels.0} vẫn sẽ là phần đầu tiên (ví dụ: "my-first-site")
