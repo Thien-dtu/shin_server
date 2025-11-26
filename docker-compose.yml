@@ -22,6 +22,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    command: postgres -c shared_buffers=64MB -c effective_cache_size=128MB -c work_mem=4MB -c maintenance_work_mem=16MB
     deploy:
       resources:
         limits:
@@ -66,6 +67,11 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - PAPERLESS_TRUSTED_PROXIES=172.18.0.0/16
+      - PAPERLESS_WEBSERVER_WORKERS=1
+      - PAPERLESS_TASK_WORKERS=1
+      - PAPERLESS_THREADS_PER_WORKER=1
+      - PAPERLESS_USE_X_FORWARDED_HOST=true
+      - PAPERLESS_PROXY_SSL_HEADER=["HTTP_X_FORWARDED_PROTO", "https"]
     volumes:
       - ./data/paperless/data:/usr/src/paperless/data
       - ./media/paperless/media:/usr/src/paperless/media
@@ -92,6 +98,7 @@ services:
       - SIGNUPS_ALLOWED=true
       - PUID=${PUID}
       - PGID=${PGID}
+      - DOMAIN=https://vaultwarden.buiducthien.store
     volumes:
       - ./data/vaultwarden:/data:rw
     depends_on:
@@ -108,8 +115,6 @@ services:
     image: caddy:latest
     container_name: caddy
     restart: unless-stopped
-    ports:
-      - 80:80
     networks:
       - selfnet
     volumes:
@@ -178,10 +183,8 @@ services:
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - PORTAINER_CSRF_PROTECTION_DISABLED=1
+     # - PORTAINER_CSRF_PROTECTION_DISABLED=1
     restart: unless-stopped
-    ports:
-      - 9000:9000
     networks:
       - selfnet
     deploy:

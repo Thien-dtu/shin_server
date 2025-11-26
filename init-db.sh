@@ -8,6 +8,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE DATABASE nextcloud_db;
     CREATE DATABASE wallabag_db;
     CREATE DATABASE gitea_db;
+    GRANT ALL PRIVILEGES ON DATABASE paperless_db TO $POSTGRES_USER;
     -- Xóa các dòng CREATE DATABASE cho gitea, freshrss, wallabag, joplin... nếu có
 EOSQL
 
